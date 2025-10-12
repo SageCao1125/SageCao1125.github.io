@@ -3313,34 +3313,63 @@ year={2025}
         return true;
     }
 
-    function publicationByTopicSpecific(a) {
+    // function publicationByTopicSpecific(a) {
 
-        // 先移除所有链接的 active 类
-        var links = document.querySelectorAll('.subtitle-aux a');
-        links.forEach(function(link) {
-            link.classList.remove('active');
-        });
+    //     // 先移除所有链接的 active 类
+    //     var links = document.querySelectorAll('.subtitle-aux a');
+    //     links.forEach(function(link) {
+    //         link.classList.remove('active');
+    //     });
         
-        // 为当前点击的链接添加 active 类
-        element.classList.add('active');
+    //     // 为当前点击的链接添加 active 类
+    //     element.classList.add('active');
 
-        publicationByTopicInner();
+    //     publicationByTopicInner();
+    //     publicationByTopicSpecificInner(a);
+
+    //     var hash = a.hash;
+    //     $(hash).prop('id', hash.substr(1) + '-noscroll');
+    //     window.location.hash = hash;
+    //     $(hash + '-noscroll').prop('id', hash.substr(1));
+
+    //     if (!$(hash).isInViewport()) {
+    //         $('html, body').animate({
+    //             scrollTop: $(hash).offset().top
+    //         }, 1000, function(){
+    //         });
+    //     }
+
+    //     return false;
+    // }
+    function publicationByTopicSpecific(a) {
+        // 若当前不是“按主题”视图，则先切换到按主题视图
+        if (!$("#publication-by-topic").hasClass("activated")) {
+            // 这一步会设置按钮的选中样式，并渲染各 topic 的分组
+            publicationByTopic();
+        } else {
+            // 若已在按主题视图，为确保列表存在，重新渲染一次（幂等）
+            publicationByTopicInner();
+            // 同时统一按钮样式（可选，保持与 publicationByTopic 一致）
+            document.getElementById('publication-by-selected').classList.remove('selected-btn');
+            document.getElementById('publication-by-date').classList.remove('selected-btn');
+            document.getElementById('publication-by-topic').classList.add('selected-btn');
+        }
+
+        // 高亮当前 topic 的链接（注意用 activated，而不是 active）
         publicationByTopicSpecificInner(a);
 
+        // 跳转到对应的锚点（保留你的无滚动临时 id 技巧）
         var hash = a.hash;
         $(hash).prop('id', hash.substr(1) + '-noscroll');
         window.location.hash = hash;
         $(hash + '-noscroll').prop('id', hash.substr(1));
 
         if (!$(hash).isInViewport()) {
-            $('html, body').animate({
-                scrollTop: $(hash).offset().top
-            }, 1000, function(){
-            });
+            $('html, body').animate({ scrollTop: $(hash).offset().top }, 1000);
         }
-
         return false;
     }
+
 
     $(function() {
         allPublications = $("#main-pub-card-container .pub-card");
