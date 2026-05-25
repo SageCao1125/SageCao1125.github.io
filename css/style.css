@@ -1042,23 +1042,40 @@ section.research .paper-info heading{
     color: rgb(0, 71, 119);
 }
 
+section.research .pub-card .col-l {
+    min-width: 0;
+    max-width: 100%;
+}
+
 section.research .paper-thumbnail {
     margin-bottom: 30px;
     padding-right: 10px;
-    display: flex; /* 使用flexbox */
-    justify-content: center; /* 水平居中 */
-    align-items: center; /* 垂直居中 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
 }
 
-section.research .paper-thumbnail img{
+section.research .paper-thumbnail img,
+section.research .paper-thumbnail video {
+    display: block;
+    box-sizing: border-box;
     width: 99%;
+    max-width: 100%;
     height: auto;
+    min-width: 0;
+    flex: 0 1 auto;
     padding-top: 0px;
     padding-bottom: 0px;
-    border-radius:10px;
+    border-radius: 10px;
+    object-fit: contain;
 }
 
-section.research .paper-thumbnail:hover img{
+section.research .paper-thumbnail:hover img,
+section.research .paper-thumbnail:hover video {
     -webkit-box-shadow: 0 5px 30px #e3e3e3;
     box-shadow: 0 5px 30px #e3e3e3;
     border-color: #f2f2f2;
