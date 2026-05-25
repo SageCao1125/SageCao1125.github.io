@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="site-loading">
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
@@ -96,9 +96,24 @@
     <link rel="preload" href="images/background/sky.png" as="image" />
 
     <style>
+      html.site-loading {
+        overflow: hidden;
+      }
+
+      html.site-loading #about,
+      html.site-loading #research,
+      html.site-loading #portfolio,
+      html.site-loading #footer,
+      html.site-loading #partial-about,
+      html.site-loading #partial-research,
+      html.site-loading #partial-portfolio {
+        display: none !important;
+      }
+
       #home.banner {
         min-height: 100vh;
         min-height: 100dvh;
+        display: block !important;
       }
     </style>
 
@@ -244,6 +259,7 @@
     <script src="js/portfolio-tabs.js"></script>
     <script src="js/bibtex.js"></script>
     <script src="js/about.js"></script>
+    <script src="js/main.js"></script>
     <script src="js/load-partials.js"></script>
 </body>
 </html>

@@ -3,6 +3,13 @@
   min-height: 100dvh;
 }
 
+html.site-loading #about,
+html.site-loading #research,
+html.site-loading #portfolio,
+html.site-loading #footer {
+  display: none !important;
+}
+
 .custom-link a,
 .custom-link a:visited {
   color: rgb(26, 115, 206);

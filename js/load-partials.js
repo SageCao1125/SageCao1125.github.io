@@ -3,7 +3,8 @@
 
   var siteInitialized = false;
   var siteInitializing = false;
-  var mainJsLoaded = false;
+  var HOME_BG = "images/background/sky.png";
+  var HOME_MIN_DISPLAY_MS = 600;
 
   function fetchPartial(url, retries) {
     var attempts = retries == null ? 3 : retries;
@@ -86,28 +87,6 @@
     observeLazyMedia(target);
   }
 
-  function loadScript(src) {
-    if (mainJsLoaded) {
-      return Promise.resolve();
-    }
-    return new Promise(function (resolve, reject) {
-      var existing = document.querySelector('script[src="' + src + '"]');
-      if (existing) {
-        mainJsLoaded = true;
-        resolve();
-        return;
-      }
-      var script = document.createElement("script");
-      script.src = src;
-      script.onload = function () {
-        mainJsLoaded = true;
-        resolve();
-      };
-      script.onerror = reject;
-      document.body.appendChild(script);
-    });
-  }
-
   function revealSectionsIfReady() {
     if (typeof window.revealPageSections === "function") {
       window.revealPageSections();
@@ -116,6 +95,14 @@
 
   function siteContentMissing() {
     return !document.getElementById("about") || !document.getElementById("research");
+  }
+
+  function waitForNextFrame() {
+    return new Promise(function (resolve) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(resolve);
+      });
+    });
   }
 
   function preloadImage(src) {
@@ -127,11 +114,43 @@
     });
   }
 
+  function showHomeFirst() {
+    var home = document.getElementById("home");
+    if (home) {
+      home.style.backgroundImage = "url('" + HOME_BG + "')";
+      home.style.minHeight = window.innerHeight + "px";
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function finishHomeFirstPhase(startedAt) {
+    var elapsed = Date.now() - startedAt;
+    var remaining = Math.max(0, HOME_MIN_DISPLAY_MS - elapsed);
+
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        document.documentElement.classList.remove("site-loading");
+        window.scrollTo(0, 0);
+        revealSectionsIfReady();
+        resolve();
+      }, remaining);
+    });
+  }
+
   function waitForHomeReady() {
+    var startedAt = Date.now();
+    showHomeFirst();
+
     return Promise.race([
-      preloadImage("images/background/sky.png"),
+      preloadImage(HOME_BG)
+        .then(waitForNextFrame)
+        .then(function () {
+          return finishHomeFirstPhase(startedAt);
+        }),
       new Promise(function (resolve) {
-        setTimeout(resolve, 6000);
+        setTimeout(function () {
+          finishHomeFirstPhase(startedAt).then(resolve);
+        }, 8000);
       }),
     ]);
   }
@@ -146,7 +165,6 @@
     if (window.jQuery && $.fn.isotope && $(".portfolio-items").length) {
       $(".portfolio-items").isotope({ filter: ".robot" });
     }
-    revealSectionsIfReady();
     observeLazyMedia(document.getElementById("portfolio"));
     scheduleTravelImageWarm(document.getElementById("portfolio"));
   }
@@ -158,14 +176,15 @@
     siteInitializing = true;
 
     try {
-      await loadScript("js/main.js");
-      revealSectionsIfReady();
-
       await replacePartial("partial-about", "partials/about.html", false);
       initAboutEmail();
 
       await replacePartial("partial-research", "partials/research.html");
       await injectInto("#main-pub-card-container", "partials/publications.html");
+      schedulePublicationImageWarm(
+        document.getElementById("main-pub-card-container"),
+        true
+      );
 
       initPublications();
       initHiddenAbstracts();
@@ -180,6 +199,7 @@
 
   function showLoadError(err) {
     console.error(err);
+    document.documentElement.classList.remove("site-loading");
     var msg = document.createElement("div");
     msg.style.cssText =
       "position:fixed;top:0;left:0;right:0;padding:12px 16px;background:#fff3cd;color:#664d03;z-index:99999;font-family:sans-serif;";
@@ -199,6 +219,7 @@
   window.addEventListener("pageshow", function (event) {
     if (event.persisted && siteContentMissing()) {
       siteInitialized = false;
+      document.documentElement.classList.add("site-loading");
       bootSite();
     }
   });

@@ -131,6 +131,13 @@ function publicationByTopicSpecific(a) {
   return false;
 }
 
+function refreshPublicationImages() {
+  var container = document.getElementById("main-pub-card-container");
+  var showingSelected = $("#publication-by-selected").hasClass("activated");
+  schedulePublicationImageWarm(container, showingSelected);
+  observeLazyMedia(container);
+}
+
 function initPublications() {
   allPublications = $("#main-pub-card-container .pub-card");
   allTopicsLink = $("#main-pub-container .subtitle-aux a");
@@ -141,11 +148,11 @@ function initPublications() {
       title: $(allTopicsLink[topicId]).html(),
     });
   }
-  $("#publication-by-selected").click();
   $("#main-pub-card-container").removeClass("hide");
-  observeLazyMedia(document.getElementById("main-pub-card-container"));
-}
-
-function refreshPublicationImages() {
+  schedulePublicationImageWarm(
+    document.getElementById("main-pub-card-container"),
+    true
+  );
+  $("#publication-by-selected").click();
   observeLazyMedia(document.getElementById("main-pub-card-container"));
 }

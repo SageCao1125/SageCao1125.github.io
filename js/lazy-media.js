@@ -55,6 +55,73 @@ function observeLazyMedia(root) {
   });
 }
 
+function getPublicationLazyImages(root, selectedOnly) {
+  var scope = root || document.getElementById("main-pub-card-container");
+  if (!scope) {
+    return [];
+  }
+  var selector = selectedOnly
+    ? '.pub-card[data-selected="true"] img[data-src]'
+    : "img[data-src]";
+  return Array.prototype.slice.call(scope.querySelectorAll(selector));
+}
+
+function warmPublicationImages(root, selectedOnly) {
+  var images = getPublicationLazyImages(root, selectedOnly);
+  if (!images.length) {
+    return;
+  }
+
+  if (selectedOnly || images.length <= 15) {
+    images.forEach(activateLazyImage);
+    return;
+  }
+
+  var index = 0;
+  var batchSize = 4;
+
+  function loadBatch() {
+    var count = 0;
+    while (index < images.length && count < batchSize) {
+      activateLazyImage(images[index]);
+      index += 1;
+      count += 1;
+    }
+
+    if (index < images.length) {
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(loadBatch, { timeout: 400 });
+      } else {
+        setTimeout(loadBatch, 120);
+      }
+    }
+  }
+
+  loadBatch();
+}
+
+function schedulePublicationImageWarm(root, selectedOnly) {
+  var images = getPublicationLazyImages(root, selectedOnly);
+  if (!images.length) {
+    return;
+  }
+
+  var run = function () {
+    warmPublicationImages(root, selectedOnly);
+  };
+
+  if (selectedOnly || images.length <= 15) {
+    run();
+    return;
+  }
+
+  if ("requestIdleCallback" in window) {
+    requestIdleCallback(run, { timeout: 800 });
+  } else {
+    setTimeout(run, 100);
+  }
+}
+
 function getTravelLazyImages(root) {
   var scope = root || document.getElementById("portfolio");
   if (!scope) {
