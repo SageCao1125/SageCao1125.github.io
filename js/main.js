@@ -26,30 +26,42 @@
 
 ==================================*/
 
-/*========Window Load Function========*/
-$(window).on("load", function () {
+function revealPageSections() {
+  var navBar = document.getElementById("navbar");
+  if (navBar) {
+    navBar.style.display = "";
+  }
+  var bannerSection = document.getElementById("home");
+  if (bannerSection) {
+    bannerSection.style.display = "block";
+  }
+  ["about", "research", "portfolio", "blogs"].forEach(function (id) {
+    var section = document.getElementById(id);
+    if (section) {
+      section.style.display = "";
+    }
+  });
+  var footer = document.getElementById("footer");
+  if (footer) {
+    footer.style.display = "";
+  }
+}
+
+window.revealPageSections = revealPageSections;
+
+var windowLoadTasksDone = false;
+
+function onWindowLoadTasks() {
+  if (windowLoadTasksDone) {
+    return;
+  }
+  windowLoadTasksDone = true;
   /*========Preloader Setup========*/
   setTimeout(function () {
     $(".preloader").addClass("loaded");
   }, 0); // since we disabled preloader for now, we can set this to 0
 
-  /*======== Load order ========*/
-  var navBar = document.getElementById('navbar');
-  navBar.style.display = '';
-  var bannerSection = document.getElementById('home');
-  bannerSection.style.display = 'block';
-  var aboutSection = document.getElementById('about');
-  aboutSection.style.display = '';
-  var researchSection = document.getElementById('research');
-  researchSection.style.display = '';
-  var portfolioSection = document.getElementById('portfolio');
-  portfolioSection.style.display = '';
-  var blogSection = document.getElementById('blogs');
-  if (blogSection) {
-    blogSection.style.display = '';
-  }
-  var footer = document.getElementById('footer')
-  footer.style.display = '';
+  revealPageSections();
 
   /*========Portfolio Isotope Setup========*/
   if ($(".portfolio-items").length) {
@@ -96,7 +108,13 @@ $(window).on("load", function () {
       }
     }
   }
-});
+}
+
+/*========Window Load Function========*/
+$(window).on("load", onWindowLoadTasks);
+if (document.readyState === "complete") {
+  onWindowLoadTasks();
+}
 
 /*========Document Ready Function========*/
 $(function () {
