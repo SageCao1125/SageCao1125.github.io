@@ -142,6 +142,23 @@ function refreshPublicationImages() {
   var showingSelected = $("#publication-by-selected").hasClass("activated");
   schedulePublicationImageWarm(container, showingSelected);
   observeLazyMedia(container);
+  refreshPublicationVideos(container);
+}
+
+function refreshPublicationVideos(container) {
+  if (!container) {
+    return;
+  }
+  Array.prototype.slice.call(container.querySelectorAll("video")).forEach(function (video) {
+    video.preload = "auto";
+    video.muted = true;
+    video.playsInline = true;
+    video.load();
+    var playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(function () {});
+    }
+  });
 }
 
 function initPublications() {
@@ -178,4 +195,5 @@ function initPublications() {
 
   schedulePublicationImageWarm(container[0], true);
   observeLazyMedia(container[0]);
+  refreshPublicationVideos(container[0]);
 }

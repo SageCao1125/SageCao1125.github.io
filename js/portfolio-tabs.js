@@ -4,7 +4,6 @@ function initPortfolioTabs() {
   if (!filterItems.length || !groups.length) return;
 
   let current = 0;
-  let autoCycle = true;
 
   function activate(index) {
     filterItems.forEach(function (li) {
@@ -25,7 +24,6 @@ function initPortfolioTabs() {
 
   filterItems.forEach(function (li, idx) {
     li.addEventListener("click", function () {
-      autoCycle = false;
       current = idx;
       activate(idx);
     });

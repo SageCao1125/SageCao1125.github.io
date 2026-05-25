@@ -201,7 +201,7 @@
 
   function preloadImageUrls(urls) {
     var index = 0;
-    var batchSize = 4;
+    var batchSize = 2;
 
     function loadBatch() {
       var count = 0;
@@ -215,9 +215,9 @@
 
       if (index < urls.length) {
         if ("requestIdleCallback" in window) {
-          requestIdleCallback(loadBatch, { timeout: 500 });
+          requestIdleCallback(loadBatch, { timeout: 1200 });
         } else {
-          setTimeout(loadBatch, 160);
+          setTimeout(loadBatch, 350);
         }
       }
     }
@@ -231,13 +231,15 @@
     }
     portfolioWarmStarted = true;
 
-    getPortfolioHtml()
-      .then(function (html) {
-        preloadImageUrls(extractTravelImageSources(html));
-      })
-      .catch(function (err) {
-        console.error(err);
-      });
+    setTimeout(function () {
+      getPortfolioHtml()
+        .then(function (html) {
+          preloadImageUrls(extractTravelImageSources(html));
+        })
+        .catch(function (err) {
+          console.error(err);
+        });
+    }, 1500);
   }
 
   async function loadPortfolioPartial() {
@@ -248,9 +250,6 @@
     var html = await getPortfolioHtml();
     await replacePartialHtml("partial-portfolio", html);
     initPortfolioTabs();
-    if (window.jQuery && $.fn.isotope && $(".portfolio-items").length) {
-      $(".portfolio-items").isotope({ filter: ".robot" });
-    }
     observeLazyMedia(document.getElementById("portfolio"));
     scheduleTravelImageWarm(document.getElementById("portfolio"));
   }
@@ -262,10 +261,12 @@
     siteInitializing = true;
 
     try {
-      startPortfolioWarmup();
-
       await replacePartial("partial-about", "partials/about.html", false);
       initAboutEmail();
+
+      getPortfolioHtml().catch(function (err) {
+        console.error(err);
+      });
 
       await replacePartial("partial-research", "partials/research.html");
       await injectInto("#main-pub-card-container", "partials/publications.html");
@@ -276,6 +277,7 @@
 
       initPublications();
       initHiddenAbstracts();
+      startPortfolioWarmup();
 
       await loadPortfolioPartial();
       siteInitialized = true;

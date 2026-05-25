@@ -62,52 +62,6 @@ function onWindowLoadTasks() {
   }, 0); // since we disabled preloader for now, we can set this to 0
 
   revealPageSections();
-
-  /*========Portfolio Isotope Setup========*/
-  if ($(".portfolio-items").length) {
-    var categories = [];
-    var active_category = 0;
-    var stopSwap = false;
-    $(".portfolio-filter ul li").each(function () {
-      categories.push($(this).attr("data-filter"));
-    });
-
-    var $elements = $(".portfolio-items");
-    // $elements.isotope();
-    $elements.isotope({ filter: ".robot" });
-    $(".portfolio-filter ul li").eq(0).addClass("sel-item");
-    $(".portfolio-filter ul li").on("click", function () {
-      stopSwap = true;
-      $(".portfolio-filter ul li").removeClass("sel-item");
-      $(this).addClass("sel-item");
-      var selector = $(this).attr("data-filter");
-      $(".portfolio-items").isotope({
-        filter: selector,
-        animationOptions: {
-          duration: 750,
-          easing: "linear",
-          queue: false,
-        },
-      });
-    });
-
-    setInterval(swapCategory, 100000);
-    function swapCategory() {
-      if (!stopSwap) {
-        active_category = (active_category + 1) % categories.length;
-        $(".portfolio-filter ul li").removeClass("sel-item");
-        $(".portfolio-filter ul li").eq(active_category).addClass("sel-item");
-        $(".portfolio-items").isotope({
-          filter: categories[active_category],
-          animationOptions: {
-            duration: 750,
-            easing: "linear",
-            queue: false,
-          },
-        });
-      }
-    }
-  }
 }
 
 /*========Window Load Function========*/
