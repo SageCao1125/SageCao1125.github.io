@@ -31,6 +31,7 @@ function publicationBySelected() {
       $("#main-pub-card-container").append(pub);
     }
   }
+  refreshPublicationImages();
 }
 
 function publicationByDate() {
@@ -60,6 +61,7 @@ function publicationByDate() {
     }
     $("#main-pub-card-container").append(allPublications[pubId]);
   }
+  refreshPublicationImages();
 }
 
 function publicationByTopicInner() {
@@ -84,6 +86,7 @@ function publicationByTopicInner() {
       }
     }
   }
+  refreshPublicationImages();
 }
 
 function publicationByTopicSpecificInner(a) {
@@ -140,4 +143,9 @@ function initPublications() {
   }
   $("#publication-by-selected").click();
   $("#main-pub-card-container").removeClass("hide");
+  observeLazyMedia(document.getElementById("main-pub-card-container"));
+}
+
+function refreshPublicationImages() {
+  observeLazyMedia(document.getElementById("main-pub-card-container"));
 }

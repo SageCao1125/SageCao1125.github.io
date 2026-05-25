@@ -42,3 +42,12 @@
   display: flex;
   justify-content: space-between;
 }
+
+.portfolio,
+.portfolio p,
+.portfolio h4,
+.portfolio h5,
+.portfolio h6,
+.portfolio .item-overlay p {
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", sans-serif;
+}
