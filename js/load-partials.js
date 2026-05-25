@@ -118,8 +118,27 @@
     return !document.getElementById("about") || !document.getElementById("research");
   }
 
+  function preloadImage(src) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = resolve;
+      img.onerror = resolve;
+      img.src = src;
+    });
+  }
+
+  function waitForHomeReady() {
+    return Promise.race([
+      preloadImage("images/background/sky.png"),
+      new Promise(function (resolve) {
+        setTimeout(resolve, 6000);
+      }),
+    ]);
+  }
+
   async function loadPortfolioPartial() {
     if (document.getElementById("portfolio")) {
+      scheduleTravelImageWarm(document.getElementById("portfolio"));
       return;
     }
     await replacePartial("partial-portfolio", "partials/portfolio.html");
@@ -129,6 +148,7 @@
     }
     revealSectionsIfReady();
     observeLazyMedia(document.getElementById("portfolio"));
+    scheduleTravelImageWarm(document.getElementById("portfolio"));
   }
 
   async function initSite() {
@@ -138,6 +158,9 @@
     siteInitializing = true;
 
     try {
+      await loadScript("js/main.js");
+      revealSectionsIfReady();
+
       await replacePartial("partial-about", "partials/about.html", false);
       initAboutEmail();
 
@@ -148,7 +171,6 @@
       initHiddenAbstracts();
 
       await loadPortfolioPartial();
-      await loadScript("js/main.js");
       revealSectionsIfReady();
       siteInitialized = true;
     } finally {
@@ -167,7 +189,11 @@
   }
 
   function bootSite() {
-    initSite().catch(showLoadError);
+    waitForHomeReady()
+      .then(function () {
+        return initSite();
+      })
+      .catch(showLoadError);
   }
 
   window.addEventListener("pageshow", function (event) {

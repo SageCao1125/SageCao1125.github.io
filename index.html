@@ -94,7 +94,13 @@
     <link href="data/洒1.ico" rel="icon" type="image/x-icon" />
 
     <link rel="preload" href="images/background/sky.png" as="image" />
-    <link rel="preload" href="images/me.jpg" as="image" />
+
+    <style>
+      #home.banner {
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+    </style>
 
     <link
       href="https://fonts.googleapis.com/css?family=Raleway:200,300,400,500,600,700,800,900%7cOpen+Sans:400,600,700,800"
@@ -174,6 +180,19 @@
         </div>
       </div>
     </section>
+    <script>
+      (function () {
+        var home = document.getElementById("home");
+        function sizeHome() {
+          if (!home) {
+            return;
+          }
+          home.style.minHeight = window.innerHeight + "px";
+        }
+        sizeHome();
+        window.addEventListener("resize", sizeHome);
+      })();
+    </script>
     <!--Home Section End-->
 
     <div id="partial-about"></div>

@@ -1,4 +1,5 @@
 var lazyMediaObserver = null;
+var travelWarmStarted = false;
 
 function initLazyMedia() {
   if (!("IntersectionObserver" in window)) {
@@ -27,6 +28,7 @@ function activateLazyImage(img) {
   }
   img.src = src;
   img.removeAttribute("data-src");
+  img.removeAttribute("loading");
   if (lazyMediaObserver) {
     lazyMediaObserver.unobserve(img);
   }
@@ -51,4 +53,64 @@ function observeLazyMedia(root) {
   images.forEach(function (img) {
     lazyMediaObserver.observe(img);
   });
+}
+
+function getTravelLazyImages(root) {
+  var scope = root || document.getElementById("portfolio");
+  if (!scope) {
+    return [];
+  }
+  return Array.prototype.slice.call(
+    scope.querySelectorAll(".portfolio-group.robot img[data-src]")
+  );
+}
+
+function scheduleTravelImageWarm(root) {
+  if (travelWarmStarted) {
+    return;
+  }
+  var images = getTravelLazyImages(root);
+  if (!images.length) {
+    return;
+  }
+  travelWarmStarted = true;
+
+  var run = function () {
+    warmTravelImages(root);
+  };
+
+  if ("requestIdleCallback" in window) {
+    requestIdleCallback(run, { timeout: 1500 });
+  } else {
+    setTimeout(run, 300);
+  }
+}
+
+function warmTravelImages(root) {
+  var images = getTravelLazyImages(root);
+  if (!images.length) {
+    return;
+  }
+
+  var index = 0;
+  var batchSize = 3;
+
+  function loadBatch() {
+    var count = 0;
+    while (index < images.length && count < batchSize) {
+      activateLazyImage(images[index]);
+      index += 1;
+      count += 1;
+    }
+
+    if (index < images.length) {
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(loadBatch, { timeout: 400 });
+      } else {
+        setTimeout(loadBatch, 120);
+      }
+    }
+  }
+
+  loadBatch();
 }
