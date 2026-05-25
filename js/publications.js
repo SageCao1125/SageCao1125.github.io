@@ -24,12 +24,16 @@ function publicationBySelected() {
   $("#main-pub-container .subtitle-aux a").removeClass("activated");
   a.addClass("activated");
 
+  var scrollY = window.scrollY || window.pageYOffset || 0;
   $("#main-pub-card-container").html("");
   for (var pubId = 0; pubId < allPublications.length; pubId++) {
     var pub = $(allPublications[pubId]);
     if (pub.data("selected") == true) {
       $("#main-pub-card-container").append(pub);
     }
+  }
+  if (scrollY > 0) {
+    window.scrollTo(0, scrollY);
   }
   refreshPublicationImages();
 }
@@ -121,12 +125,14 @@ function publicationByTopicSpecific(a) {
   publicationByTopicSpecificInner(a);
 
   var hash = a.hash;
-  $(hash).prop("id", hash.substr(1) + "-noscroll");
-  window.location.hash = hash;
-  $(hash + "-noscroll").prop("id", hash.substr(1));
-
-  if (!$(hash).isInViewport()) {
-    $("html, body").animate({ scrollTop: $(hash).offset().top }, 1000);
+  if (hash && hash.length > 1) {
+    var target = $(hash);
+    if (target.length && !target.isInViewport()) {
+      $("html, body").animate({ scrollTop: target.offset().top - 15 }, 600);
+    }
+    if (history.replaceState) {
+      history.replaceState(null, "", hash);
+    }
   }
   return false;
 }
@@ -148,11 +154,28 @@ function initPublications() {
       title: $(allTopicsLink[topicId]).html(),
     });
   }
+
+  document.getElementById("publication-by-selected").classList.add("selected-btn");
+  document.getElementById("publication-by-date").classList.remove("selected-btn");
+  document.getElementById("publication-by-topic").classList.remove("selected-btn");
+  $("#main-pub-container .subtitle a").removeClass("activated");
+  $("#main-pub-container .subtitle-aux a").removeClass("activated");
+  $("#publication-by-selected").addClass("activated");
   $("#main-pub-card-container").removeClass("hide");
-  schedulePublicationImageWarm(
-    document.getElementById("main-pub-card-container"),
-    true
-  );
-  $("#publication-by-selected").click();
-  observeLazyMedia(document.getElementById("main-pub-card-container"));
+
+  var container = $("#main-pub-card-container");
+  var scrollY = window.scrollY || window.pageYOffset || 0;
+  container.empty();
+  allPublications.each(function () {
+    if ($(this).data("selected") == true) {
+      container.append(this);
+    }
+  });
+
+  if (scrollY > 0) {
+    window.scrollTo(0, scrollY);
+  }
+
+  schedulePublicationImageWarm(container[0], true);
+  observeLazyMedia(container[0]);
 }

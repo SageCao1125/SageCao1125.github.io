@@ -3,8 +3,9 @@
 
   var siteInitialized = false;
   var siteInitializing = false;
+  var homeFirstDone = false;
   var HOME_BG = "images/background/sky.png";
-  var HOME_MIN_DISPLAY_MS = 600;
+  var HOME_MIN_DISPLAY_MS = 400;
 
   function fetchPartial(url, retries) {
     var attempts = retries == null ? 3 : retries;
@@ -60,6 +61,16 @@
     return attemptFetch(attempts);
   }
 
+  function preserveScroll(run) {
+    var scrollY = window.scrollY || window.pageYOffset || 0;
+    return Promise.resolve(run()).then(function (result) {
+      if (scrollY > 0) {
+        window.scrollTo(0, scrollY);
+      }
+      return result;
+    });
+  }
+
   async function replacePartial(placeholderId, url, deferImages) {
     var html = await fetchPartial(url);
     if (deferImages !== false) {
@@ -69,11 +80,14 @@
     if (!placeholder) {
       throw new Error("Missing placeholder: " + placeholderId);
     }
-    placeholder.outerHTML = html;
-    var root = document.getElementById(placeholderId.replace("partial-", ""));
-    if (root) {
-      observeLazyMedia(root);
-    }
+
+    await preserveScroll(function () {
+      placeholder.outerHTML = html;
+      var root = document.getElementById(placeholderId.replace("partial-", ""));
+      if (root) {
+        observeLazyMedia(root);
+      }
+    });
   }
 
   async function injectInto(selector, url) {
@@ -83,8 +97,11 @@
     if (!target) {
       throw new Error("Missing target: " + selector);
     }
-    target.innerHTML = html;
-    observeLazyMedia(target);
+
+    await preserveScroll(function () {
+      target.innerHTML = html;
+      observeLazyMedia(target);
+    });
   }
 
   function revealSectionsIfReady() {
@@ -114,45 +131,49 @@
     });
   }
 
-  function showHomeFirst() {
+  function finishHomeFirstPhase() {
+    if (homeFirstDone) {
+      return Promise.resolve();
+    }
+    homeFirstDone = true;
+
     var home = document.getElementById("home");
     if (home) {
-      home.style.backgroundImage = "url('" + HOME_BG + "')";
       home.style.minHeight = window.innerHeight + "px";
     }
-    window.scrollTo(0, 0);
-  }
-
-  function finishHomeFirstPhase(startedAt) {
-    var elapsed = Date.now() - startedAt;
-    var remaining = Math.max(0, HOME_MIN_DISPLAY_MS - elapsed);
 
     return new Promise(function (resolve) {
       setTimeout(function () {
         document.documentElement.classList.remove("site-loading");
-        window.scrollTo(0, 0);
         revealSectionsIfReady();
         resolve();
-      }, remaining);
+      }, HOME_MIN_DISPLAY_MS);
     });
   }
 
   function waitForHomeReady() {
-    var startedAt = Date.now();
-    showHomeFirst();
+    return new Promise(function (resolve) {
+      var settled = false;
+      var timeoutId = setTimeout(function () {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        finishHomeFirstPhase().then(resolve);
+      }, 8000);
 
-    return Promise.race([
       preloadImage(HOME_BG)
         .then(waitForNextFrame)
         .then(function () {
-          return finishHomeFirstPhase(startedAt);
-        }),
-      new Promise(function (resolve) {
-        setTimeout(function () {
-          finishHomeFirstPhase(startedAt).then(resolve);
-        }, 8000);
-      }),
-    ]);
+          if (settled) {
+            return;
+          }
+          settled = true;
+          clearTimeout(timeoutId);
+          return finishHomeFirstPhase();
+        })
+        .then(resolve);
+    });
   }
 
   async function loadPortfolioPartial() {
@@ -190,7 +211,6 @@
       initHiddenAbstracts();
 
       await loadPortfolioPartial();
-      revealSectionsIfReady();
       siteInitialized = true;
     } finally {
       siteInitializing = false;
@@ -209,6 +229,9 @@
   }
 
   function bootSite() {
+    if (siteInitialized || siteInitializing) {
+      return;
+    }
     waitForHomeReady()
       .then(function () {
         return initSite();
@@ -219,6 +242,7 @@
   window.addEventListener("pageshow", function (event) {
     if (event.persisted && siteContentMissing()) {
       siteInitialized = false;
+      homeFirstDone = false;
       document.documentElement.classList.add("site-loading");
       bootSite();
     }
