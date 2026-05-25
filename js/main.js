@@ -45,7 +45,9 @@ $(window).on("load", function () {
   var portfolioSection = document.getElementById('portfolio');
   portfolioSection.style.display = '';
   var blogSection = document.getElementById('blogs');
-  blogSection.style.display = '';
+  if (blogSection) {
+    blogSection.style.display = '';
+  }
   var footer = document.getElementById('footer')
   footer.style.display = '';
 
