@@ -128,7 +128,7 @@ function getTravelLazyImages(root) {
     return [];
   }
   return Array.prototype.slice.call(
-    scope.querySelectorAll(".portfolio-group.robot img[data-src]")
+    scope.querySelectorAll(".portfolio-group.robot img[data-src], .portfolio-group.robot img[src]")
   );
 }
 
@@ -165,7 +165,11 @@ function warmTravelImages(root) {
   function loadBatch() {
     var count = 0;
     while (index < images.length && count < batchSize) {
-      activateLazyImage(images[index]);
+      if (images[index].hasAttribute("data-src")) {
+        activateLazyImage(images[index]);
+      } else {
+        images[index].removeAttribute("loading");
+      }
       index += 1;
       count += 1;
     }

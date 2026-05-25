@@ -4,6 +4,8 @@
   var siteInitialized = false;
   var siteInitializing = false;
   var homeFirstDone = false;
+  var portfolioHtmlPromise = null;
+  var portfolioWarmStarted = false;
   var HOME_BG = "images/background/sky.png";
   var HOME_MIN_DISPLAY_MS = 400;
 
@@ -76,6 +78,10 @@
     if (deferImages !== false) {
       html = deferImagesInHtml(html);
     }
+    await replacePartialHtml(placeholderId, html);
+  }
+
+  async function replacePartialHtml(placeholderId, html) {
     var placeholder = document.getElementById(placeholderId);
     if (!placeholder) {
       throw new Error("Missing placeholder: " + placeholderId);
@@ -88,6 +94,13 @@
         observeLazyMedia(root);
       }
     });
+  }
+
+  function getPortfolioHtml() {
+    if (!portfolioHtmlPromise) {
+      portfolioHtmlPromise = fetchPartial("partials/portfolio.html");
+    }
+    return portfolioHtmlPromise;
   }
 
   async function injectInto(selector, url) {
@@ -176,12 +189,64 @@
     });
   }
 
+  function extractTravelImageSources(html) {
+    var doc = new DOMParser().parseFromString(html, "text/html");
+    var images = doc.querySelectorAll(".portfolio-group.robot img[src]");
+    return Array.prototype.slice.call(images)
+      .map(function (img) {
+        return img.getAttribute("src");
+      })
+      .filter(Boolean);
+  }
+
+  function preloadImageUrls(urls) {
+    var index = 0;
+    var batchSize = 4;
+
+    function loadBatch() {
+      var count = 0;
+      while (index < urls.length && count < batchSize) {
+        var img = new Image();
+        img.decoding = "async";
+        img.src = urls[index];
+        index += 1;
+        count += 1;
+      }
+
+      if (index < urls.length) {
+        if ("requestIdleCallback" in window) {
+          requestIdleCallback(loadBatch, { timeout: 500 });
+        } else {
+          setTimeout(loadBatch, 160);
+        }
+      }
+    }
+
+    loadBatch();
+  }
+
+  function startPortfolioWarmup() {
+    if (portfolioWarmStarted) {
+      return;
+    }
+    portfolioWarmStarted = true;
+
+    getPortfolioHtml()
+      .then(function (html) {
+        preloadImageUrls(extractTravelImageSources(html));
+      })
+      .catch(function (err) {
+        console.error(err);
+      });
+  }
+
   async function loadPortfolioPartial() {
     if (document.getElementById("portfolio")) {
       scheduleTravelImageWarm(document.getElementById("portfolio"));
       return;
     }
-    await replacePartial("partial-portfolio", "partials/portfolio.html");
+    var html = await getPortfolioHtml();
+    await replacePartialHtml("partial-portfolio", html);
     initPortfolioTabs();
     if (window.jQuery && $.fn.isotope && $(".portfolio-items").length) {
       $(".portfolio-items").isotope({ filter: ".robot" });
@@ -197,6 +262,8 @@
     siteInitializing = true;
 
     try {
+      startPortfolioWarmup();
+
       await replacePartial("partial-about", "partials/about.html", false);
       initAboutEmail();
 
