@@ -93,6 +93,9 @@
       if (root) {
         observeLazyMedia(root);
       }
+      if (window.siteNavigation) {
+        window.siteNavigation.refresh();
+      }
     });
   }
 
@@ -114,6 +117,9 @@
     await preserveScroll(function () {
       target.innerHTML = html;
       observeLazyMedia(target);
+      if (window.siteNavigation) {
+        window.siteNavigation.refresh();
+      }
     });
   }
 
