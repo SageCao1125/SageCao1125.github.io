@@ -50,6 +50,69 @@ function revealPageSections() {
 window.revealPageSections = revealPageSections;
 
 var windowLoadTasksDone = false;
+var sectionNavigationInitialized = false;
+
+function initSectionNavigation() {
+  if (sectionNavigationInitialized) {
+    return;
+  }
+  sectionNavigationInitialized = true;
+
+  document.addEventListener(
+    "click",
+    function (event) {
+      var link = event.target.closest("[data-scroll-nav], [data-scroll-goto]");
+      if (!link) {
+        return;
+      }
+
+      var index =
+        link.getAttribute("data-scroll-nav") ||
+        link.getAttribute("data-scroll-goto");
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      function scrollToSection() {
+        var target = document.querySelector('[data-scroll-index="' + index + '"]');
+        if (!target) {
+          return false;
+        }
+
+        var top = target.getBoundingClientRect().top + window.pageYOffset - 15;
+        window.scrollTo({
+          top: Math.max(0, top),
+          behavior: "smooth",
+        });
+        return true;
+      }
+
+      document.querySelectorAll("nav .nav-link").forEach(function (navLink) {
+        navLink.classList.remove("active", "last-active");
+      });
+      if (link.classList.contains("nav-link")) {
+        link.classList.add("active");
+      }
+
+      $(".navbar-collapse").removeClass("show");
+
+      if (scrollToSection()) {
+        return;
+      }
+
+      var attempts = 0;
+      var retry = setInterval(function () {
+        attempts += 1;
+        if (scrollToSection() || attempts >= 30) {
+          clearInterval(retry);
+        }
+      }, 100);
+    },
+    true
+  );
+}
+
+window.initSectionNavigation = initSectionNavigation;
 
 function onWindowLoadTasks() {
   if (windowLoadTasksDone) {
@@ -85,17 +148,20 @@ $(function () {
   }
   homeHeight();
   wind.resize(homeHeight);
+  initSectionNavigation();
 
   /*========ScrollIt Setup========*/
-  $.scrollIt({
-    upKey: 38, // key code to navigate to the next section
-    downKey: 40, // key code to navigate to the previous section
-    easing: "swing", // the easing function for animation
-    scrollTime: 600, // how long (in ms) the animation takes
-    activeClass: "active", // class given to the active nav element
-    onPageChange: null, // function(pageIndex) that is called when page is changed
-    topOffset: -15, // offste (in px) for fixed top navigation
-  });
+  if ($.scrollIt) {
+    $.scrollIt({
+      upKey: 38, // key code to navigate to the next section
+      downKey: 40, // key code to navigate to the previous section
+      easing: "swing", // the easing function for animation
+      scrollTime: 600, // how long (in ms) the animation takes
+      activeClass: "active", // class given to the active nav element
+      onPageChange: null, // function(pageIndex) that is called when page is changed
+      topOffset: -15, // offste (in px) for fixed top navigation
+    });
+  }
 
   $(window).scroll(function () {
     var navItem = $("nav .navbar-nav .nav-item").last().find(".nav-link");
