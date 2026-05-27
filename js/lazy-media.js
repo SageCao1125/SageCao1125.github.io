@@ -147,9 +147,9 @@ function scheduleTravelImageWarm(root) {
   };
 
   if ("requestIdleCallback" in window) {
-    requestIdleCallback(run, { timeout: 3000 });
+    requestIdleCallback(run, { timeout: 800 });
   } else {
-    setTimeout(run, 1200);
+    setTimeout(run, 300);
   }
 }
 
@@ -160,7 +160,7 @@ function warmTravelImages(root) {
   }
 
   var index = 0;
-  var batchSize = 2;
+  var batchSize = 3;
 
   function loadBatch() {
     var count = 0;
@@ -176,9 +176,9 @@ function warmTravelImages(root) {
 
     if (index < images.length) {
       if ("requestIdleCallback" in window) {
-        requestIdleCallback(loadBatch, { timeout: 1000 });
+        requestIdleCallback(loadBatch, { timeout: 700 });
       } else {
-        setTimeout(loadBatch, 300);
+        setTimeout(loadBatch, 180);
       }
     }
   }

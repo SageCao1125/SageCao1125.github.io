@@ -207,7 +207,7 @@
 
   function preloadImageUrls(urls) {
     var index = 0;
-    var batchSize = 2;
+    var batchSize = 12;
 
     function loadBatch() {
       var count = 0;
@@ -221,9 +221,9 @@
 
       if (index < urls.length) {
         if ("requestIdleCallback" in window) {
-          requestIdleCallback(loadBatch, { timeout: 1200 });
+          requestIdleCallback(loadBatch, { timeout: 700 });
         } else {
-          setTimeout(loadBatch, 350);
+          setTimeout(loadBatch, 200);
         }
       }
     }
@@ -245,7 +245,7 @@
         .catch(function (err) {
           console.error(err);
         });
-    }, 1500);
+    }, 100);
   }
 
   async function loadPortfolioPartial() {
@@ -273,6 +273,7 @@
       getPortfolioHtml().catch(function (err) {
         console.error(err);
       });
+      startPortfolioWarmup();
 
       await replacePartial("partial-research", "partials/research.html");
       await injectInto("#main-pub-card-container", "partials/publications.html");
@@ -283,7 +284,6 @@
 
       initPublications();
       initHiddenAbstracts();
-      startPortfolioWarmup();
 
       await loadPortfolioPartial();
       siteInitialized = true;
