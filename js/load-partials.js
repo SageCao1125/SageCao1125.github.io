@@ -6,6 +6,7 @@
   var homeFirstDone = false;
   var portfolioHtmlPromise = null;
   var portfolioWarmStarted = false;
+  var selectedVideoPreloads = [];
   var HOME_BG = "images/background/sky.png";
   var HOME_MIN_DISPLAY_MS = 400;
 
@@ -108,6 +109,9 @@
 
   async function injectInto(selector, url) {
     var html = await fetchPartial(url);
+    if (selector === "#main-pub-card-container") {
+      preloadVideoUrls(extractSelectedVideoSources(html));
+    }
     html = deferImagesInHtml(html);
     var target = document.querySelector(selector);
     if (!target) {
@@ -205,9 +209,32 @@
       .filter(Boolean);
   }
 
+  function extractSelectedVideoSources(html) {
+    var doc = new DOMParser().parseFromString(html, "text/html");
+    var sources = doc.querySelectorAll('.pub-card[data-selected="true"] video source[src]');
+    return Array.prototype.slice.call(sources)
+      .map(function (source) {
+        return source.getAttribute("src");
+      })
+      .filter(Boolean);
+  }
+
+  function preloadVideoUrls(urls) {
+    urls.forEach(function (url) {
+      var video = document.createElement("video");
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
+      video.preload = "auto";
+      video.src = url;
+      video.load();
+      selectedVideoPreloads.push(video);
+    });
+  }
+
   function preloadImageUrls(urls) {
     var index = 0;
-    var batchSize = 12;
+    var batchSize = 3;
 
     function loadBatch() {
       var count = 0;
@@ -221,9 +248,9 @@
 
       if (index < urls.length) {
         if ("requestIdleCallback" in window) {
-          requestIdleCallback(loadBatch, { timeout: 700 });
+          requestIdleCallback(loadBatch, { timeout: 1000 });
         } else {
-          setTimeout(loadBatch, 200);
+          setTimeout(loadBatch, 250);
         }
       }
     }
@@ -245,7 +272,7 @@
         .catch(function (err) {
           console.error(err);
         });
-    }, 100);
+    }, 1200);
   }
 
   async function loadPortfolioPartial() {
@@ -273,7 +300,6 @@
       getPortfolioHtml().catch(function (err) {
         console.error(err);
       });
-      startPortfolioWarmup();
 
       await replacePartial("partial-research", "partials/research.html");
       await injectInto("#main-pub-card-container", "partials/publications.html");
@@ -284,6 +310,7 @@
 
       initPublications();
       initHiddenAbstracts();
+      startPortfolioWarmup();
 
       await loadPortfolioPartial();
       siteInitialized = true;
