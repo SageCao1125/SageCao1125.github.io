@@ -17,7 +17,7 @@ function initLazyMedia() {
         activateLazyImage(entry.target);
       });
     },
-    { rootMargin: "300px 0px", threshold: 0.01 }
+    { rootMargin: "900px 0px", threshold: 0.01 }
   );
 }
 
@@ -26,6 +26,7 @@ function activateLazyImage(img) {
   if (!src) {
     return;
   }
+  img.decoding = "async";
   img.src = src;
   img.removeAttribute("data-src");
   img.removeAttribute("loading");
@@ -147,9 +148,9 @@ function scheduleTravelImageWarm(root) {
   };
 
   if ("requestIdleCallback" in window) {
-    requestIdleCallback(run, { timeout: 800 });
+    requestIdleCallback(run, { timeout: 250 });
   } else {
-    setTimeout(run, 300);
+    setTimeout(run, 120);
   }
 }
 
@@ -160,7 +161,7 @@ function warmTravelImages(root) {
   }
 
   var index = 0;
-  var batchSize = 3;
+  var batchSize = 6;
 
   function loadBatch() {
     var count = 0;
@@ -176,9 +177,9 @@ function warmTravelImages(root) {
 
     if (index < images.length) {
       if ("requestIdleCallback" in window) {
-        requestIdleCallback(loadBatch, { timeout: 700 });
+        requestIdleCallback(loadBatch, { timeout: 300 });
       } else {
-        setTimeout(loadBatch, 180);
+        setTimeout(loadBatch, 100);
       }
     }
   }

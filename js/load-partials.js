@@ -133,6 +133,11 @@
     }
   }
 
+  function revealLoadedSections() {
+    document.documentElement.classList.remove("site-loading");
+    revealSectionsIfReady();
+  }
+
   function siteContentMissing() {
     return !document.getElementById("about") || !document.getElementById("research");
   }
@@ -167,11 +172,106 @@
 
     return new Promise(function (resolve) {
       setTimeout(function () {
-        document.documentElement.classList.remove("site-loading");
-        revealSectionsIfReady();
         resolve();
       }, HOME_MIN_DISPLAY_MS);
     });
+  }
+
+  function waitWithTimeout(promise, timeoutMs) {
+    return Promise.race([
+      promise,
+      new Promise(function (resolve) {
+        setTimeout(resolve, timeoutMs);
+      }),
+    ]);
+  }
+
+  function waitForImageReady(img) {
+    if (!img) {
+      return Promise.resolve();
+    }
+
+    if (typeof activateLazyImage === "function") {
+      activateLazyImage(img);
+    }
+
+    img.loading = "eager";
+    img.decoding = "async";
+    img.setAttribute("fetchpriority", "high");
+
+    if (img.complete && img.naturalWidth > 0) {
+      if (typeof img.decode === "function") {
+        return img.decode().catch(function () {});
+      }
+      return Promise.resolve();
+    }
+
+    return new Promise(function (resolve) {
+      img.addEventListener("load", resolve, { once: true });
+      img.addEventListener("error", resolve, { once: true });
+    }).then(function () {
+      if (typeof img.decode === "function") {
+        return img.decode().catch(function () {});
+      }
+    });
+  }
+
+  function waitForVideoReady(video) {
+    if (!video) {
+      return Promise.resolve();
+    }
+
+    video.muted = true;
+    video.defaultMuted = true;
+    video.loop = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.setAttribute("muted", "");
+    video.setAttribute("loop", "");
+    video.setAttribute("autoplay", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+    video.setAttribute("preload", "auto");
+    video.preload = "auto";
+
+    return new Promise(function (resolve) {
+      if (video.readyState >= 2) {
+        resolve();
+        return;
+      }
+
+      video.addEventListener("loadeddata", resolve, { once: true });
+      video.addEventListener("canplay", resolve, { once: true });
+      video.addEventListener("error", resolve, { once: true });
+      video.load();
+      var playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(function () {});
+      }
+    });
+  }
+
+  function waitForCoreMediaReady() {
+    var about = document.getElementById("about");
+    var publications = document.getElementById("main-pub-card-container");
+    var mediaPromises = [];
+
+    if (about) {
+      Array.prototype.slice.call(about.querySelectorAll("img")).forEach(function (img) {
+        mediaPromises.push(waitForImageReady(img));
+      });
+    }
+
+    if (publications) {
+      Array.prototype.slice.call(publications.querySelectorAll("img")).forEach(function (img) {
+        mediaPromises.push(waitForImageReady(img));
+      });
+      Array.prototype.slice.call(publications.querySelectorAll("video")).forEach(function (video) {
+        mediaPromises.push(waitForVideoReady(video));
+      });
+    }
+
+    return waitWithTimeout(Promise.all(mediaPromises), 2800);
   }
 
   function waitForHomeReady() {
@@ -280,7 +380,7 @@
       scheduleTravelImageWarm(document.getElementById("portfolio"));
       return;
     }
-    var html = await getPortfolioHtml();
+    var html = deferImagesInHtml(await getPortfolioHtml());
     await replacePartialHtml("partial-portfolio", html);
     initPortfolioTabs();
     observeLazyMedia(document.getElementById("portfolio"));
@@ -310,10 +410,15 @@
 
       initPublications();
       initHiddenAbstracts();
-      startPortfolioWarmup();
 
-      await loadPortfolioPartial();
+      await waitForCoreMediaReady();
+      revealLoadedSections();
       siteInitialized = true;
+
+      startPortfolioWarmup();
+      loadPortfolioPartial().catch(function (err) {
+        console.error(err);
+      });
     } finally {
       siteInitializing = false;
     }
