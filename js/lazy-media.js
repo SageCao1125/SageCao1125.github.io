@@ -161,7 +161,7 @@ function warmTravelImages(root) {
   }
 
   var index = 0;
-  var batchSize = 6;
+  var batchSize = 8;
 
   function loadBatch() {
     var count = 0;
@@ -177,9 +177,9 @@ function warmTravelImages(root) {
 
     if (index < images.length) {
       if ("requestIdleCallback" in window) {
-        requestIdleCallback(loadBatch, { timeout: 300 });
+        requestIdleCallback(loadBatch, { timeout: 250 });
       } else {
-        setTimeout(loadBatch, 100);
+        setTimeout(loadBatch, 80);
       }
     }
   }

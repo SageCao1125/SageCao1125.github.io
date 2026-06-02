@@ -82,6 +82,27 @@
     await replacePartialHtml(placeholderId, html);
   }
 
+  async function injectHtmlInto(selector, html, deferImages) {
+    if (selector === "#main-pub-card-container") {
+      preloadVideoUrls(extractSelectedVideoSources(html));
+    }
+    if (deferImages !== false) {
+      html = deferImagesInHtml(html);
+    }
+    var target = document.querySelector(selector);
+    if (!target) {
+      throw new Error("Missing target: " + selector);
+    }
+
+    await preserveScroll(function () {
+      target.innerHTML = html;
+      observeLazyMedia(target);
+      if (window.siteNavigation) {
+        window.siteNavigation.refresh();
+      }
+    });
+  }
+
   async function replacePartialHtml(placeholderId, html) {
     var placeholder = document.getElementById(placeholderId);
     if (!placeholder) {
@@ -109,22 +130,7 @@
 
   async function injectInto(selector, url) {
     var html = await fetchPartial(url);
-    if (selector === "#main-pub-card-container") {
-      preloadVideoUrls(extractSelectedVideoSources(html));
-    }
-    html = deferImagesInHtml(html);
-    var target = document.querySelector(selector);
-    if (!target) {
-      throw new Error("Missing target: " + selector);
-    }
-
-    await preserveScroll(function () {
-      target.innerHTML = html;
-      observeLazyMedia(target);
-      if (window.siteNavigation) {
-        window.siteNavigation.refresh();
-      }
-    });
+    await injectHtmlInto(selector, html);
   }
 
   function revealSectionsIfReady() {
@@ -334,7 +340,7 @@
 
   function preloadImageUrls(urls) {
     var index = 0;
-    var batchSize = 3;
+    var batchSize = 5;
 
     function loadBatch() {
       var count = 0;
@@ -348,14 +354,54 @@
 
       if (index < urls.length) {
         if ("requestIdleCallback" in window) {
-          requestIdleCallback(loadBatch, { timeout: 1000 });
+          requestIdleCallback(loadBatch, { timeout: 500 });
         } else {
-          setTimeout(loadBatch, 250);
+          setTimeout(loadBatch, 120);
         }
       }
     }
 
     loadBatch();
+  }
+
+  function runWhenIdle(fn, timeout) {
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(fn, { timeout: timeout || 1000 });
+    } else {
+      setTimeout(fn, Math.min(timeout || 1000, 300));
+    }
+  }
+
+  function loadFooterExtras() {
+    runWhenIdle(function () {
+      Array.prototype.slice
+        .call(document.querySelectorAll("img[data-footer-src]"))
+        .forEach(function (img) {
+          img.src = img.getAttribute("data-footer-src");
+          img.removeAttribute("data-footer-src");
+        });
+
+      var globe = document.getElementById("visitor-globe");
+      if (!globe || globe.getAttribute("data-loaded") === "true") {
+        return;
+      }
+
+      var src = globe.getAttribute("data-script-src");
+      if (!src) {
+        return;
+      }
+
+      var iframe = document.createElement("iframe");
+      iframe.title = "Visitor map";
+      iframe.loading = "lazy";
+      iframe.style.cssText = "border:0;width:100%;height:100%;overflow:hidden;";
+      iframe.srcdoc =
+        '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;}</style></head><body><script src="' +
+        src.replace(/"/g, "%22") +
+        '"><\/script></body></html>';
+      globe.setAttribute("data-loaded", "true");
+      globe.appendChild(iframe);
+    }, 2500);
   }
 
   function startPortfolioWarmup() {
@@ -372,7 +418,7 @@
         .catch(function (err) {
           console.error(err);
         });
-    }, 1200);
+    }, 300);
   }
 
   async function loadPortfolioPartial() {
@@ -394,15 +440,18 @@
     siteInitializing = true;
 
     try {
-      await replacePartial("partial-about", "partials/about.html", false);
+      var aboutHtmlPromise = fetchPartial("partials/about.html");
+      var researchHtmlPromise = fetchPartial("partials/research.html");
+      var publicationsHtmlPromise = fetchPartial("partials/publications.html");
+
+      await replacePartialHtml("partial-about", await aboutHtmlPromise);
       initAboutEmail();
 
-      getPortfolioHtml().catch(function (err) {
-        console.error(err);
-      });
-
-      await replacePartial("partial-research", "partials/research.html");
-      await injectInto("#main-pub-card-container", "partials/publications.html");
+      await replacePartialHtml(
+        "partial-research",
+        deferImagesInHtml(await researchHtmlPromise)
+      );
+      await injectHtmlInto("#main-pub-card-container", await publicationsHtmlPromise);
       schedulePublicationImageWarm(
         document.getElementById("main-pub-card-container"),
         true
@@ -416,6 +465,7 @@
       siteInitialized = true;
 
       startPortfolioWarmup();
+      loadFooterExtras();
       loadPortfolioPartial().catch(function (err) {
         console.error(err);
       });
