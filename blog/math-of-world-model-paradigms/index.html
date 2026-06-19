@@ -9,7 +9,7 @@
     />
     <meta name="author" content="Jiahang Cao" />
     <title>The Math Behind World Model Paradigms for Robot Learning</title>
-    <link href="../../data/%E6%B4%92.ico" rel="icon" type="image/x-icon" />
+    <link href="../../data/洒1.ico" rel="icon" type="image/x-icon" />
     <script type="module" crossorigin src="assets/main-frAv0iFn.js"></script>
     <link rel="stylesheet" crossorigin href="assets/main-ByQ-DEM8.css">
     <style>
@@ -35,6 +35,34 @@
         color: #25231f;
       }
 
+      .article-body .katex {
+        font-size: 1.12em;
+      }
+
+      .article-body .katex-display > .katex {
+        font-size: 1.14em;
+      }
+
+      .reference-copy .katex,
+      .citation-tooltip-copy .katex {
+        font-size: 1.06em;
+      }
+
+      .article-footer .article-visitor-badge {
+        display: inline-flex;
+        align-items: center;
+        margin: 0.32rem 0 0.18rem;
+        line-height: 1;
+        text-decoration: none;
+      }
+
+      .article-footer .article-visitor-badge img {
+        display: block;
+        width: auto;
+        height: 20px;
+        max-width: 100%;
+      }
+
       @media (max-width: 720px) {
         .article-return {
           padding-inline: 1rem;
@@ -47,5 +75,45 @@
       <a href="../../#about">&larr; Return home</a>
     </header>
     <div id="root"></div>
+    <script>
+      (function () {
+        var badgeHref = "https://visitorbadge.io/status?path=https%3A%2F%2Fsagecao1125.github.io%2Fblog%2Fmath-of-world-model-paradigms%2F";
+        var badgeSrc = "https://api.visitorbadge.io/api/combined?path=https%3A%2F%2Fsagecao1125.github.io%2Fblog%2Fmath-of-world-model-paradigms%2F&countColor=%23263759";
+
+        function mountVisitorBadge() {
+          var byline = document.querySelector(".article-footer p");
+          if (!byline || document.querySelector(".article-visitor-badge")) {
+            return;
+          }
+          var badge = document.createElement("a");
+          badge.className = "article-visitor-badge";
+          badge.href = badgeHref;
+          badge.target = "_blank";
+          badge.rel = "noopener noreferrer";
+
+          var image = document.createElement("img");
+          image.src = badgeSrc;
+          image.alt = "Article visitor count";
+          image.loading = "lazy";
+          image.decoding = "async";
+
+          badge.appendChild(image);
+          byline.insertAdjacentElement("afterend", badge);
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", mountVisitorBadge);
+        } else {
+          mountVisitorBadge();
+        }
+
+        var root = document.getElementById("root");
+        if (!root || typeof MutationObserver === "undefined") {
+          return;
+        }
+        var observer = new MutationObserver(mountVisitorBadge);
+        observer.observe(root, { childList: true, subtree: true });
+      })();
+    </script>
   </body>
 </html>

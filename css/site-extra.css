@@ -234,9 +234,10 @@ html.site-loading #footer {
 }
 
 .writing-page nav.blog-nav .logo {
-  font-family: Georgia, "Times New Roman", "Songti SC", serif;
-  font-size: 21px;
-  font-weight: 600;
+  font-family: "arial-h1-adjusted", "roboto-h1-adjusted";
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0;
   line-height: 1;
   text-transform: none;
 }
