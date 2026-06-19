@@ -1,6 +1,6 @@
 # Local-only helper scripts and intermediate media outputs.
 /local_media_pipeline/
-
+/prompt/
 
 ## other index files
 ./index-2.html
