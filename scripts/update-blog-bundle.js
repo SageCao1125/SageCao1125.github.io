@@ -63,12 +63,29 @@ function replaceEmbeddedString(source, constantName, markdown) {
   return source.slice(0, valueStart) + JSON.stringify(markdown) + source.slice(end);
 }
 
+function applyLocaleMetadataPatches(source) {
+  return source
+    .replace(
+      'children:e.language==="zh"?"，":", "',
+      'children:e.language==="zh"?"， ":", "'
+    )
+    .replace(
+      'children:", "',
+      'children:e.language==="zh"?"， ":", "'
+    )
+    .replace(
+      'children:["Published ",e.publishedDate]',
+      'children:[e.language==="zh"?"发布于":"Published ",e.publishedDate]'
+    );
+}
+
 let bundle = fs.readFileSync(bundlePath, "utf8");
 for (const article of articles) {
   const markdown = fs.readFileSync(article.markdownPath, "utf8");
   article.markdown = markdown;
   bundle = replaceEmbeddedString(bundle, article.constantName, markdown);
 }
+bundle = applyLocaleMetadataPatches(bundle);
 fs.writeFileSync(bundlePath, bundle, "utf8");
 
 for (const article of articles) {

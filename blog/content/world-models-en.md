@@ -1,5 +1,6 @@
 ---
 title: The Mathematical Essence of Three World Model Paradigms in Robot Learning
+publishedDate: June 19, 2026, The Dragon Boat Festival
 
 ---
 

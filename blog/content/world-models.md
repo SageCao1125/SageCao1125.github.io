@@ -1,5 +1,8 @@
 ---
 title: 机器人学习中三类 World Model 范式的数学本质
+authors: 曹嘉航， 郭瀚中， Andrew F. Luo
+affiliation: 香港大学
+publishedDate: 2026年6月19日， 端午节
 
 ---
 
