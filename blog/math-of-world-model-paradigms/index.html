@@ -10,7 +10,7 @@
     <meta name="author" content="Jiahang Cao" />
     <title>The Math Behind World Model Paradigms for Robot Learning</title>
     <link href="../../data/洒1.ico" rel="icon" type="image/x-icon" />
-    <script type="module" crossorigin src="assets/main-frAv0iFn.js"></script>
+    <script type="module" crossorigin src="assets/main-frAv0iFn.js?v=20260619093820"></script>
     <link rel="stylesheet" crossorigin href="assets/main-ByQ-DEM8.css">
     <style>
       .article-return {
@@ -49,18 +49,20 @@
       }
 
       .article-footer .article-visitor-badge {
-        display: inline-flex;
+        display: flex;
+        flex: 0 0 100%;
         align-items: center;
-        margin: 0.32rem 0 0.18rem;
+        justify-content: flex-start;
+        margin: 0.12rem 0 0;
         line-height: 1;
         text-decoration: none;
       }
 
       .article-footer .article-visitor-badge img {
         display: block;
-        width: auto;
-        height: 20px;
-        max-width: 100%;
+        width: 180px;
+        height: auto;
+        max-width: min(180px, 100%);
       }
 
       @media (max-width: 720px) {
@@ -81,8 +83,8 @@
         var badgeSrc = "https://api.visitorbadge.io/api/combined?path=https%3A%2F%2Fsagecao1125.github.io%2Fblog%2Fmath-of-world-model-paradigms%2F&countColor=%23263759";
 
         function mountVisitorBadge() {
-          var byline = document.querySelector(".article-footer p");
-          if (!byline || document.querySelector(".article-visitor-badge")) {
+          var footer = document.querySelector(".article-footer");
+          if (!footer || footer.querySelector(".article-visitor-badge")) {
             return;
           }
           var badge = document.createElement("a");
@@ -98,7 +100,7 @@
           image.decoding = "async";
 
           badge.appendChild(image);
-          byline.insertAdjacentElement("afterend", badge);
+          footer.appendChild(badge);
         }
 
         if (document.readyState === "loading") {
