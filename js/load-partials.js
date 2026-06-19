@@ -144,6 +144,25 @@
     revealSectionsIfReady();
   }
 
+  function scrollToInitialHash() {
+    var hash = (window.location.hash || "").toLowerCase();
+    var sectionIndexByHash = {
+      "#home": "0",
+      "#about": "1",
+      "#research": "2",
+      "#portfolio": "3",
+    };
+    var index = sectionIndexByHash[hash];
+
+    if (index == null || !window.siteNavigation) {
+      return;
+    }
+
+    setTimeout(function () {
+      window.siteNavigation.scrollTo(index);
+    }, 80);
+  }
+
   function siteContentMissing() {
     return !document.getElementById("about") || !document.getElementById("research");
   }
@@ -463,6 +482,7 @@
       await waitForCoreMediaReady();
       revealLoadedSections();
       siteInitialized = true;
+      scrollToInitialHash();
 
       startPortfolioWarmup();
       loadFooterExtras();

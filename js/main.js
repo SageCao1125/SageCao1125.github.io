@@ -35,7 +35,7 @@ function revealPageSections() {
   if (bannerSection) {
     bannerSection.style.display = "block";
   }
-  ["about", "research", "portfolio", "blogs"].forEach(function (id) {
+  ["about", "featured-writing", "research", "portfolio", "blogs"].forEach(function (id) {
     var section = document.getElementById(id);
     if (section) {
       section.style.display = "";
