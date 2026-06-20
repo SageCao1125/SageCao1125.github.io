@@ -13,7 +13,7 @@ publishedDate: June 19, 2026, The Dragon Boat Festival
 > \pi(a_t \mid o_{1:t}, a_{1:t-1}, l),
 > $$
 >
-> but they differ in how they structure the modeling problem: IDM-style explicitly introduces a future goal $g_t$; Single-backbone directly parameterizes the action policy with a unified model; MoT-style first learns a shared representation $Z_t$, then uses expert modules to handle action, vision, and language prediction. This article focuses on the probabilistic factorization, optimization conflicts, and parameter coupling behind these architectures from a Hessian perspective.
+> but they differ in how they structure the modeling problem: IDM-style explicitly introduces a future goal $g_t$; Single-backbone directly parameterizes the action policy with a unified model; MoT-style first learns a shared representation $Z_t$, then uses expert modules to to model modality-specific outputs, such as action, vision, language, and other predictions. This article focuses on the probabilistic factorization, optimization conflicts, and parameter coupling behind these architectures from a Hessian perspective.
 >
 > **Recommended Reading Time: About 15 Minutes**
 
@@ -410,7 +410,7 @@ A_t =
 (a_t, a_{t+1}, \dots, a_{t+H-1}).
 $$
 
-Here $H$ is the prediction horizon.
+Here $H$ is the prediction horizon. The action decoder can be parameterized in different ways, such as discrete autoregressive tokens or continuous flow-based decoding. Since this does not change the high-level probabilistic formulation, we leave these implementation details to the Appendix.
 
 From the perspective of probabilistic modeling, the focus of Single-backbone is not to introduce a new conditional independence assumption, but to directly learn:
 
@@ -552,7 +552,6 @@ However, one should not simply claim that "vision is higher-dimensional, so the 
 3. Low-level control requires real-time performance, stability, and precision, which cannot be solved by model scale alone;
 4. When the model fails, it is difficult to determine whether the problem lies in vision, language, history modeling, or action output.
 
----
 
 # 3. Paradigm III: Shared-Attention + Specialized Experts / MoT-Style
 
@@ -627,6 +626,8 @@ p_{\theta_L}(y_t^L \mid Z_t).
 $$
 
 That is, $Z_t$ is not an explicit future goal variable. It is a multimodal context representation learned by shared attention. Different experts model different output distributions based on the same $Z_t$.
+
+Here, action, future observation, and language are used only as representative examples; the same formulation can be extended to other modality-specific outputs (e.g., audio, depth, segmentation, flow, etc.).
 
 ---
 
@@ -894,7 +895,6 @@ Its key question is:
 
 The advantage of MoT-style is that it avoids the extremes of full sharing and full separation. Instead, it creates a compromise between shared cognition and modality-specific updates.
 
----
 
 # 5. Comparison Summary
 
@@ -904,7 +904,6 @@ The advantage of MoT-style is that it avoids the extremes of full sharing and fu
 | Single-backbone / VLA-style | $\pi(O_{t+1}, A_{t}, y_t^L \mid o_{1:t}, a_{1:t-1}, l)\approx p_\Theta(O_{t+1}, A_{t}, y_t^L \mid o_{1:t}, a_{1:t-1}, l).$ | End-to-end; strong scaling potential; semantic transfer | Gradient conflict; sensitive action representation; closed-loop control pressure |
 | MoT-style | $Z_t=f_\Phi(o_{1:t},a_{1:t-1},l)$, $p_{\Phi,\theta_O,\theta_A,\theta_L}(O_{t+1}, A_t, y_t^L \mid o_{1:t}, a_{1:t-1}, l)\approx p_{\theta_O}(O_{t+1} \mid Z_t)p_{\theta_A}(A_t \mid Z_t)p_{\theta_L}(y_t^L \mid Z_t).$ | Shared cognition while reducing expert-level conflict; suitable for multimodal scaling | Shared layers remain coupled; engineering complexity; possible inference latency |
 
----
 
 # 6. Conclusion
 
