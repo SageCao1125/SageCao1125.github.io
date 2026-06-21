@@ -219,7 +219,9 @@ This is an engineering bottleneck approximation, not a strict theorem.
 
 The future model can be trained by goal prediction:
 
-$$\mathcal{L}_{\text{goal}}(\theta)=\mathbb{E}\left[-\log q_\theta(g_t^\star \mid o_{1:t}, a_{1:t-1}, l)\right].$$
+$$\mathcal{L}_{\text{goal}}(\theta)=
+\mathbb{E}\left[-\log q_\theta(g_t^\star \mid o_{1:t}, a_{1:t-1}, l)\right].
+$$
 
 The inverse dynamics model or controller can be trained by action supervision:
 

@@ -226,7 +226,9 @@ $$
 Future model 可以通过目标预测训练：
 
 
-$$\mathcal{L}_{\text{goal}}(\theta)=\mathbb{E}\left[-\log q_\theta(g_t^\star \mid o_{1:t}, a_{1:t-1}, l)\right].$$
+$$\mathcal{L}_{\text{goal}}(\theta)=
+\mathbb{E}\left[-\log q_\theta(g_t^\star \mid o_{1:t}, a_{1:t-1}, l)\right].
+$$
 
 
 Inverse dynamics 或 controller 可以通过动作监督训练：
@@ -268,9 +270,6 @@ $$
 
 但在真实系统中，$g_t$ 往往是图像、轨迹、waypoint 或高维 latent，完整计算这个积分通常不可行。因此，实际推理中通常需要近似。
 
-<!-- ---
-
-### 神经网络直接输出一个目标（最常用） -->
 
 最常见的工程实现是让神经网络直接预测一个目标：
 
