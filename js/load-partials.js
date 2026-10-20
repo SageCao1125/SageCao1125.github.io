@@ -3,12 +3,7 @@
 
   var siteInitialized = false;
   var siteInitializing = false;
-  var homeFirstDone = false;
   var portfolioHtmlPromise = null;
-  var portfolioWarmStarted = false;
-  var selectedVideoPreloads = [];
-  var HOME_BG = "images/background/sky.png";
-  var HOME_MIN_DISPLAY_MS = 400;
 
   function fetchPartial(url, retries) {
     var attempts = retries == null ? 3 : retries;
@@ -83,9 +78,6 @@
   }
 
   async function injectHtmlInto(selector, html, deferImages) {
-    if (selector === "#main-pub-card-container") {
-      preloadVideoUrls(extractSelectedVideoSources(html));
-    }
     if (deferImages !== false) {
       html = deferImagesInHtml(html);
     }
@@ -166,223 +158,6 @@
   function siteContentMissing() {
     return !document.getElementById("about") || !document.getElementById("research");
   }
-
-  function waitForNextFrame() {
-    return new Promise(function (resolve) {
-      requestAnimationFrame(function () {
-        requestAnimationFrame(resolve);
-      });
-    });
-  }
-
-  function preloadImage(src) {
-    return new Promise(function (resolve) {
-      var img = new Image();
-      img.onload = resolve;
-      img.onerror = resolve;
-      img.src = src;
-    });
-  }
-
-  function finishHomeFirstPhase() {
-    if (homeFirstDone) {
-      return Promise.resolve();
-    }
-    homeFirstDone = true;
-
-    var home = document.getElementById("home");
-    if (home) {
-      home.style.minHeight = window.innerHeight + "px";
-    }
-
-    return new Promise(function (resolve) {
-      setTimeout(function () {
-        resolve();
-      }, HOME_MIN_DISPLAY_MS);
-    });
-  }
-
-  function waitWithTimeout(promise, timeoutMs) {
-    return Promise.race([
-      promise,
-      new Promise(function (resolve) {
-        setTimeout(resolve, timeoutMs);
-      }),
-    ]);
-  }
-
-  function waitForImageReady(img) {
-    if (!img) {
-      return Promise.resolve();
-    }
-
-    if (typeof activateLazyImage === "function") {
-      activateLazyImage(img);
-    }
-
-    img.loading = "eager";
-    img.decoding = "async";
-    img.setAttribute("fetchpriority", "high");
-
-    if (img.complete && img.naturalWidth > 0) {
-      if (typeof img.decode === "function") {
-        return img.decode().catch(function () {});
-      }
-      return Promise.resolve();
-    }
-
-    return new Promise(function (resolve) {
-      img.addEventListener("load", resolve, { once: true });
-      img.addEventListener("error", resolve, { once: true });
-    }).then(function () {
-      if (typeof img.decode === "function") {
-        return img.decode().catch(function () {});
-      }
-    });
-  }
-
-  function waitForVideoReady(video) {
-    if (!video) {
-      return Promise.resolve();
-    }
-
-    video.muted = true;
-    video.defaultMuted = true;
-    video.loop = true;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.setAttribute("muted", "");
-    video.setAttribute("loop", "");
-    video.setAttribute("autoplay", "");
-    video.setAttribute("playsinline", "");
-    video.setAttribute("webkit-playsinline", "");
-    video.setAttribute("preload", "auto");
-    video.preload = "auto";
-
-    return new Promise(function (resolve) {
-      if (video.readyState >= 2) {
-        resolve();
-        return;
-      }
-
-      video.addEventListener("loadeddata", resolve, { once: true });
-      video.addEventListener("canplay", resolve, { once: true });
-      video.addEventListener("error", resolve, { once: true });
-      video.load();
-      var playPromise = video.play();
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch(function () {});
-      }
-    });
-  }
-
-  function waitForCoreMediaReady() {
-    var about = document.getElementById("about");
-    var publications = document.getElementById("main-pub-card-container");
-    var mediaPromises = [];
-
-    if (about) {
-      Array.prototype.slice.call(about.querySelectorAll("img")).forEach(function (img) {
-        mediaPromises.push(waitForImageReady(img));
-      });
-    }
-
-    if (publications) {
-      Array.prototype.slice.call(publications.querySelectorAll("img")).forEach(function (img) {
-        mediaPromises.push(waitForImageReady(img));
-      });
-      Array.prototype.slice.call(publications.querySelectorAll("video")).forEach(function (video) {
-        mediaPromises.push(waitForVideoReady(video));
-      });
-    }
-
-    return waitWithTimeout(Promise.all(mediaPromises), 2800);
-  }
-
-  function waitForHomeReady() {
-    return new Promise(function (resolve) {
-      var settled = false;
-      var timeoutId = setTimeout(function () {
-        if (settled) {
-          return;
-        }
-        settled = true;
-        finishHomeFirstPhase().then(resolve);
-      }, 8000);
-
-      preloadImage(HOME_BG)
-        .then(waitForNextFrame)
-        .then(function () {
-          if (settled) {
-            return;
-          }
-          settled = true;
-          clearTimeout(timeoutId);
-          return finishHomeFirstPhase();
-        })
-        .then(resolve);
-    });
-  }
-
-  function extractTravelImageSources(html) {
-    var doc = new DOMParser().parseFromString(html, "text/html");
-    var images = doc.querySelectorAll(".portfolio-group.robot img[src]");
-    return Array.prototype.slice.call(images)
-      .map(function (img) {
-        return img.getAttribute("src");
-      })
-      .filter(Boolean);
-  }
-
-  function extractSelectedVideoSources(html) {
-    var doc = new DOMParser().parseFromString(html, "text/html");
-    var sources = doc.querySelectorAll('.pub-card[data-selected="true"] video source[src]');
-    return Array.prototype.slice.call(sources)
-      .map(function (source) {
-        return source.getAttribute("src");
-      })
-      .filter(Boolean);
-  }
-
-  function preloadVideoUrls(urls) {
-    urls.forEach(function (url) {
-      var video = document.createElement("video");
-      video.muted = true;
-      video.defaultMuted = true;
-      video.playsInline = true;
-      video.preload = "auto";
-      video.src = url;
-      video.load();
-      selectedVideoPreloads.push(video);
-    });
-  }
-
-  function preloadImageUrls(urls) {
-    var index = 0;
-    var batchSize = 5;
-
-    function loadBatch() {
-      var count = 0;
-      while (index < urls.length && count < batchSize) {
-        var img = new Image();
-        img.decoding = "async";
-        img.src = urls[index];
-        index += 1;
-        count += 1;
-      }
-
-      if (index < urls.length) {
-        if ("requestIdleCallback" in window) {
-          requestIdleCallback(loadBatch, { timeout: 500 });
-        } else {
-          setTimeout(loadBatch, 120);
-        }
-      }
-    }
-
-    loadBatch();
-  }
-
   function runWhenIdle(fn, timeout) {
     if ("requestIdleCallback" in window) {
       requestIdleCallback(fn, { timeout: timeout || 1000 });
@@ -422,34 +197,14 @@
       globe.appendChild(iframe);
     }, 2500);
   }
-
-  function startPortfolioWarmup() {
-    if (portfolioWarmStarted) {
-      return;
-    }
-    portfolioWarmStarted = true;
-
-    setTimeout(function () {
-      getPortfolioHtml()
-        .then(function (html) {
-          preloadImageUrls(extractTravelImageSources(html));
-        })
-        .catch(function (err) {
-          console.error(err);
-        });
-    }, 300);
-  }
-
   async function loadPortfolioPartial() {
     if (document.getElementById("portfolio")) {
-      scheduleTravelImageWarm(document.getElementById("portfolio"));
       return;
     }
     var html = deferImagesInHtml(await getPortfolioHtml());
     await replacePartialHtml("partial-portfolio", html);
     initPortfolioTabs();
     observeLazyMedia(document.getElementById("portfolio"));
-    scheduleTravelImageWarm(document.getElementById("portfolio"));
   }
 
   async function initSite() {
@@ -471,22 +226,22 @@
         deferImagesInHtml(await researchHtmlPromise)
       );
       await injectHtmlInto("#main-pub-card-container", await publicationsHtmlPromise);
-      schedulePublicationImageWarm(
-        document.getElementById("main-pub-card-container"),
-        true
-      );
 
       initPublications();
       initHiddenAbstracts();
 
-      await waitForCoreMediaReady();
       revealLoadedSections();
       siteInitialized = true;
-      scrollToInitialHash();
+      if (window.location.hash.toLowerCase() !== "#portfolio") {
+        scrollToInitialHash();
+      }
 
-      startPortfolioWarmup();
       loadFooterExtras();
-      loadPortfolioPartial().catch(function (err) {
+      loadPortfolioPartial().then(function () {
+        if (window.location.hash.toLowerCase() === "#portfolio") {
+          scrollToInitialHash();
+        }
+      }).catch(function (err) {
         console.error(err);
       });
     } finally {
@@ -509,17 +264,12 @@
     if (siteInitialized || siteInitializing) {
       return;
     }
-    waitForHomeReady()
-      .then(function () {
-        return initSite();
-      })
-      .catch(showLoadError);
+    initSite().catch(showLoadError);
   }
 
   window.addEventListener("pageshow", function (event) {
     if (event.persisted && siteContentMissing()) {
       siteInitialized = false;
-      homeFirstDone = false;
       document.documentElement.classList.add("site-loading");
       bootSite();
     }

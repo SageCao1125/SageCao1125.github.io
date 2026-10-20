@@ -139,58 +139,9 @@ function publicationByTopicSpecific(a) {
 
 function refreshPublicationImages() {
   var container = document.getElementById("main-pub-card-container");
-  var showingSelected = $("#publication-by-selected").hasClass("activated");
-  schedulePublicationImageWarm(container, showingSelected);
   observeLazyMedia(container);
-  refreshPublicationVideos(container);
 }
 
-function refreshPublicationVideos(container) {
-  if (!container) {
-    return;
-  }
-  Array.prototype.slice.call(container.querySelectorAll("video")).forEach(function (video) {
-    var started = false;
-
-    function startVideo() {
-      if (started && video.readyState >= 2) {
-        return;
-      }
-      started = true;
-      video.muted = true;
-      video.defaultMuted = true;
-      video.loop = true;
-      video.autoplay = true;
-      video.playsInline = true;
-      video.setAttribute("muted", "");
-      video.setAttribute("loop", "");
-      video.setAttribute("autoplay", "");
-      video.setAttribute("playsinline", "");
-      video.setAttribute("webkit-playsinline", "");
-      video.setAttribute("preload", "auto");
-      video.preload = "auto";
-
-      if (video.readyState === 0) {
-        video.load();
-      }
-
-      var playPromise = video.play();
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch(function () {
-          started = false;
-        });
-      }
-    }
-
-    video.preload = "auto";
-    video.addEventListener("loadedmetadata", startVideo, { once: true });
-    video.addEventListener("canplay", startVideo, { once: true });
-    video.load();
-    startVideo();
-    setTimeout(startVideo, 500);
-    setTimeout(startVideo, 1500);
-  });
-}
 
 function initPublications() {
   allPublications = $("#main-pub-card-container .pub-card");
@@ -224,7 +175,5 @@ function initPublications() {
     window.scrollTo(0, scrollY);
   }
 
-  schedulePublicationImageWarm(container[0], true);
   observeLazyMedia(container[0]);
-  refreshPublicationVideos(container[0]);
 }

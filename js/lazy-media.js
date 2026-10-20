@@ -1,188 +1,78 @@
 var lazyMediaObserver = null;
-var travelWarmStarted = false;
 
 function initLazyMedia() {
-  if (!("IntersectionObserver" in window)) {
-    return;
-  }
-  if (lazyMediaObserver) {
-    return;
-  }
+  if (!("IntersectionObserver" in window) || lazyMediaObserver) return;
   lazyMediaObserver = new IntersectionObserver(
     function (entries) {
       entries.forEach(function (entry) {
-        if (!entry.isIntersecting) {
-          return;
+        if (entry.target.tagName === "VIDEO") {
+          if (entry.isIntersecting && entry.target.isConnected) {
+            activateLazyVideo(entry.target);
+          } else {
+            entry.target.pause();
+          }
+        } else if (entry.isIntersecting && entry.target.isConnected) {
+          activateLazyImage(entry.target);
         }
-        activateLazyImage(entry.target);
       });
     },
-    { rootMargin: "900px 0px", threshold: 0.01 }
+    { rootMargin: "400px 0px", threshold: 0.01 }
   );
 }
 
 function activateLazyImage(img) {
   var src = img.getAttribute("data-src");
-  if (!src) {
-    return;
-  }
+  if (!src) return;
   img.decoding = "async";
   img.src = src;
   img.removeAttribute("data-src");
   img.removeAttribute("loading");
-  if (lazyMediaObserver) {
-    lazyMediaObserver.unobserve(img);
-  }
+  if (lazyMediaObserver) lazyMediaObserver.unobserve(img);
+}
+
+function activateLazyVideo(video) {
+  var sources = video.querySelectorAll("source[data-src]");
+  sources.forEach(function (source) {
+    source.src = source.getAttribute("data-src");
+    source.removeAttribute("data-src");
+  });
+  video.muted = true;
+  video.defaultMuted = true;
+  video.playsInline = true;
+  if (sources.length) video.load();
+  var playing = video.play();
+  if (playing && playing.catch) playing.catch(function () {});
 }
 
 function deferImagesInHtml(html) {
-  return html.replace(/(<img\b[^>]*?\s)src=(["'])/gi, "$1data-src=$2");
+  // A template keeps media inert while sources are moved off the loading path.
+  var template = document.createElement("template");
+  template.innerHTML = html;
+  template.content.querySelectorAll("img[src]").forEach(function (img) {
+    img.setAttribute("data-src", img.getAttribute("src"));
+    img.removeAttribute("src");
+  });
+  template.content.querySelectorAll("video").forEach(function (video) {
+    video.removeAttribute("autoplay");
+    video.setAttribute("preload", "none");
+    video.querySelectorAll("source[src]").forEach(function (source) {
+      source.setAttribute("data-src", source.getAttribute("src"));
+      source.removeAttribute("src");
+    });
+  });
+  return template.innerHTML;
 }
 
 function observeLazyMedia(root) {
   initLazyMedia();
   var scope = root && root.querySelectorAll ? root : document;
-  var images = scope.querySelectorAll
-    ? scope.querySelectorAll("img[data-src]")
-    : document.querySelectorAll("img[data-src]");
-  if (!lazyMediaObserver) {
-    images.forEach(function (img) {
-      activateLazyImage(img);
-    });
-    return;
-  }
-  images.forEach(function (img) {
-    lazyMediaObserver.observe(img);
+  scope.querySelectorAll("img[data-src], video").forEach(function (media) {
+    if (lazyMediaObserver) {
+      lazyMediaObserver.observe(media);
+    } else if (media.tagName === "VIDEO") {
+      activateLazyVideo(media);
+    } else {
+      activateLazyImage(media);
+    }
   });
-}
-
-function getPublicationLazyImages(root, selectedOnly) {
-  var scope = root || document.getElementById("main-pub-card-container");
-  if (!scope) {
-    return [];
-  }
-  var selector = selectedOnly
-    ? '.pub-card[data-selected="true"] img[data-src]'
-    : "img[data-src]";
-  return Array.prototype.slice.call(scope.querySelectorAll(selector));
-}
-
-function warmPublicationImages(root, selectedOnly) {
-  var images = getPublicationLazyImages(root, selectedOnly);
-  if (!images.length) {
-    return;
-  }
-
-  if (selectedOnly || images.length <= 15) {
-    images.forEach(activateLazyImage);
-    return;
-  }
-
-  var index = 0;
-  var batchSize = 4;
-
-  function loadBatch() {
-    var count = 0;
-    while (index < images.length && count < batchSize) {
-      activateLazyImage(images[index]);
-      index += 1;
-      count += 1;
-    }
-
-    if (index < images.length) {
-      if ("requestIdleCallback" in window) {
-        requestIdleCallback(loadBatch, { timeout: 400 });
-      } else {
-        setTimeout(loadBatch, 120);
-      }
-    }
-  }
-
-  loadBatch();
-}
-
-function schedulePublicationImageWarm(root, selectedOnly) {
-  var images = getPublicationLazyImages(root, selectedOnly);
-  if (!images.length) {
-    return;
-  }
-
-  var run = function () {
-    warmPublicationImages(root, selectedOnly);
-  };
-
-  if (selectedOnly || images.length <= 15) {
-    run();
-    return;
-  }
-
-  if ("requestIdleCallback" in window) {
-    requestIdleCallback(run, { timeout: 800 });
-  } else {
-    setTimeout(run, 100);
-  }
-}
-
-function getTravelLazyImages(root) {
-  var scope = root || document.getElementById("portfolio");
-  if (!scope) {
-    return [];
-  }
-  return Array.prototype.slice.call(
-    scope.querySelectorAll(".portfolio-group.robot img[data-src], .portfolio-group.robot img[src]")
-  );
-}
-
-function scheduleTravelImageWarm(root) {
-  if (travelWarmStarted) {
-    return;
-  }
-  var images = getTravelLazyImages(root);
-  if (!images.length) {
-    return;
-  }
-  travelWarmStarted = true;
-
-  var run = function () {
-    warmTravelImages(root);
-  };
-
-  if ("requestIdleCallback" in window) {
-    requestIdleCallback(run, { timeout: 250 });
-  } else {
-    setTimeout(run, 120);
-  }
-}
-
-function warmTravelImages(root) {
-  var images = getTravelLazyImages(root);
-  if (!images.length) {
-    return;
-  }
-
-  var index = 0;
-  var batchSize = 8;
-
-  function loadBatch() {
-    var count = 0;
-    while (index < images.length && count < batchSize) {
-      if (images[index].hasAttribute("data-src")) {
-        activateLazyImage(images[index]);
-      } else {
-        images[index].removeAttribute("loading");
-      }
-      index += 1;
-      count += 1;
-    }
-
-    if (index < images.length) {
-      if ("requestIdleCallback" in window) {
-        requestIdleCallback(loadBatch, { timeout: 250 });
-      } else {
-        setTimeout(loadBatch, 80);
-      }
-    }
-  }
-
-  loadBatch();
 }
